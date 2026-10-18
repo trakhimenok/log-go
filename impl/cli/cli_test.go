@@ -163,8 +163,72 @@ func TestLogger(t *testing.T) {
 	}
 	buf.Reset()
 
-	// lgr.Fatal("test fatal")
-	// lgr.Fatalf(template string, args ...interface{})
-	// lgr.Fatalw(msg string, fields Fields)
+	var exitCode int
+	origExit := exit
+	exit = func(code int) {
+		exitCode = code
+	}
+	defer func() {
+		exit = origExit
+	}()
 
+	lgr.Fatal("test fatal")
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `FATAL: test fatal`) {
+		t.Log(buf.String())
+		t.Error("cli fatal not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	lgr.Fatalf("Hello %s", "World")
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `FATAL: Hello World`) {
+		t.Log(buf.String())
+		t.Error("cli fatalf not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	lgr.Fatalw("foo bar", log.Fields{"baz": "qux"})
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `FATAL: foo bar baz=qux`) {
+		t.Log(buf.String())
+		t.Error("cli fatalw not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	// Test level above FatalLevel skips Fatal logging
+	lgr.Level = log.FatalLevel + 1
+	lgr.Fatal("skipped fatal")
+	lgr.Fatalf("skipped %s", "fatal")
+	lgr.Fatalw("skipped fatal", log.Fields{"baz": "qux"})
+	assert.Equal(t, 0, exitCode)
+	assert.Empty(t, buf.String())
+}
+
+func TestNewStandard(t *testing.T) {
+	lgr := NewStandard()
+	assert.NotNil(t, lgr)
+	assert.Equal(t, log.InfoLevel, lgr.Level)
+	assert.NotNil(t, lgr.TraceOut)
+	assert.NotNil(t, lgr.DebugOut)
+	assert.NotNil(t, lgr.InfoOut)
+	assert.NotNil(t, lgr.WarnOut)
+	assert.NotNil(t, lgr.ErrorOut)
+	assert.NotNil(t, lgr.PanicOut)
+	assert.NotNil(t, lgr.FatalOut)
+	assert.NotNil(t, lgr.TraceColor)
+	assert.NotNil(t, lgr.DebugColor)
+	assert.NotNil(t, lgr.WarnColor)
+	assert.NotNil(t, lgr.ErrorColor)
+	assert.NotNil(t, lgr.PanicColor)
+	assert.NotNil(t, lgr.FatalColor)
+}
+
+func TestCheckEnding(t *testing.T) {
+	assert.Equal(t, "hello\n", checkEnding("hello"))
+	assert.Equal(t, "hello\n", checkEnding("hello\n"))
+	assert.Equal(t, "\n", checkEnding(""))
 }

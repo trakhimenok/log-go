@@ -10,18 +10,24 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: ["1.19.x", "1.20.x"]
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Go for Building
-        uses: actions/setup-go@v4
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: '1.27'
+          cache: true
       - name: Build
         run: go build -v ./...
-
-      - name: Test
-        run: go test -v ./...
+      - name: Test (race detector and coverage profile)
+        shell: bash
+        run: go test -v -race -covermode=atomic -coverprofile=profile.cov ./...
+      - name: Coverage gate (100% statement coverage)
+        shell: bash
+        run: |
+          awk '$1 != "mode:" && $3 == 0 { print "UNCOVERED: " $1 " (" $2 " stmts)"; uncovered += $2 } END { if (uncovered > 0) { printf "uncovered statements: %d\n", uncovered; exit 1 } }' profile.cov
+          total=$(go tool cover -func=profile.cov | awk '/^total:/ { gsub(/%/, "", $3); print $3 }')
+          awk -v total="$total" -v min_test_coverage_percent="100" 'BEGIN { if (total + 0 < min_test_coverage_percent + 0) { printf "coverage %s%% is below %s%%\n", total, min_test_coverage_percent; exit 1 } }'

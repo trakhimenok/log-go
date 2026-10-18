@@ -3,9 +3,12 @@ package std
 import (
 	"fmt"
 	stdlog "log"
+	"os"
 
 	"github.com/Masterminds/log-go"
 )
+
+var exit = os.Exit
 
 // New creates an instance of std.Logger that wraps a logger from the standard
 // library. It takes a logger from the standard library as an argument. This
@@ -166,7 +169,8 @@ func (l Logger) Panicw(msg string, fields log.Fields) {
 // Fatal logs a message at the Fatal level and exists the application
 func (l Logger) Fatal(msg ...interface{}) {
 	if l.Level <= log.FatalLevel {
-		l.logger.Fatal(append([]interface{}{"[FATAL]   "}, msg...)...)
+		_ = l.logger.Output(2, fmt.Sprint(append([]interface{}{"[FATAL]   "}, msg...)...))
+		exit(1)
 	}
 }
 
@@ -174,7 +178,8 @@ func (l Logger) Fatal(msg ...interface{}) {
 // message at the Fatal level and exits the application
 func (l Logger) Fatalf(template string, args ...interface{}) {
 	if l.Level <= log.FatalLevel {
-		l.logger.Fatalf("[FATAL]   "+template, args...)
+		_ = l.logger.Output(2, fmt.Sprintf("[FATAL]   "+template, args...))
+		exit(1)
 	}
 }
 
@@ -182,7 +187,8 @@ func (l Logger) Fatalf(template string, args ...interface{}) {
 // context (key-value pairs) and exits the application
 func (l Logger) Fatalw(msg string, fields log.Fields) {
 	if l.Level <= log.FatalLevel {
-		l.logger.Fatalf("[FATAL]   %s %s", msg, handlFields(fields))
+		_ = l.logger.Output(2, fmt.Sprintf("[FATAL]   %s %s", msg, handlFields(fields)))
+		exit(1)
 	}
 }
 

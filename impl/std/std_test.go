@@ -160,8 +160,47 @@ func TestLogger(t *testing.T) {
 	}
 	buf.Reset()
 
-	// lgr.Fatal("test fatal")
-	// lgr.Fatalf(template string, args ...interface{})
-	// lgr.Fatalw(msg string, fields Fields)
+	var exitCode int
+	origExit := exit
+	exit = func(code int) {
+		exitCode = code
+	}
+	defer func() {
+		exit = origExit
+	}()
 
+	lgr.Fatal("test fatal")
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `[FATAL]   test fatal`) {
+		t.Log(buf.String())
+		t.Error("stdlib fatal not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	lgr.Fatalf("Hello %s", "World")
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `[FATAL]   Hello World`) {
+		t.Log(buf.String())
+		t.Error("stdlib fatalf not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	lgr.Fatalw("foo bar", log.Fields{"baz": "qux"})
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `[FATAL]   foo bar [baz=qux]`) {
+		t.Log(buf.String())
+		t.Error("stdlib fatalw not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	// Test level above FatalLevel skips Fatal logging
+	lgr.Level = log.FatalLevel + 1
+	lgr.Fatal("skipped fatal")
+	lgr.Fatalf("skipped %s", "fatal")
+	lgr.Fatalw("skipped fatal", log.Fields{"baz": "qux"})
+	assert.Equal(t, 0, exitCode)
+	assert.Empty(t, buf.String())
 }

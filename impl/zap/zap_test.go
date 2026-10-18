@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/log-go"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -53,6 +54,18 @@ func TestLogrus(t *testing.T) {
 		lgr.Panicw("foo bar", log.Fields{"baz": "qux"})
 	})
 
+	fatalLogger := logger.WithOptions(zap.WithFatalHook(zapcore.WriteThenPanic))
+	fatalLgr := New(fatalLogger)
+	assert.Panics(t, func() {
+		fatalLgr.Fatal("test fatal")
+	})
+	assert.Panics(t, func() {
+		fatalLgr.Fatalf("Hello %s", "World")
+	})
+	assert.Panics(t, func() {
+		fatalLgr.Fatalw("foo bar", log.Fields{"baz": "qux"})
+	})
+
 	ts.AssertMessages(
 		"LEVEL(-2)	test trace",
 		"LEVEL(-2)	Hello World",
@@ -72,12 +85,10 @@ func TestLogrus(t *testing.T) {
 		"PANIC	test panic",
 		"PANIC	Hello World",
 		"PANIC	foo bar	{\"baz\": \"qux\"}",
+		"FATAL	test fatal",
+		"FATAL	Hello World",
+		"FATAL	foo bar	{\"baz\": \"qux\"}",
 	)
-
-	// lgr.Fatal("test fatal")
-	// lgr.Fatalf(template string, args ...interface{})
-	// lgr.Fatalw(msg string, fields Fields)
-
 }
 
 func TestZapInterface(t *testing.T) {
@@ -131,7 +142,7 @@ func (t *testLogSpy) Logf(format string, args ...interface{}) {
 	m := fmt.Sprintf(format, args...)
 	m = m[strings.IndexByte(m, '\t')+1:]
 	t.Messages = append(t.Messages, m)
-	t.TB.Log(m)
+	t.Log(m)
 }
 
 func (t *testLogSpy) AssertMessages(msgs ...string) {

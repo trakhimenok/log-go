@@ -3,7 +3,10 @@ package log
 import (
 	"fmt"
 	stdlog "log"
+	"os"
 )
+
+var exit = os.Exit
 
 // NewStandard sets up a basic logger using the general one provided in the Go
 // standard library
@@ -190,7 +193,8 @@ func (l StdLogger) Panicw(msg string, fields Fields) {
 // Fatal logs a message at the Fatal level and exists the application
 func (l StdLogger) Fatal(msg ...interface{}) {
 	if l.Level <= FatalLevel {
-		stdlog.Fatal(append([]interface{}{"[FATAL]   "}, msg...)...)
+		_ = stdlog.Output(2, fmt.Sprint(append([]interface{}{"[FATAL]   "}, msg...)...))
+		exit(1)
 	}
 }
 
@@ -198,7 +202,8 @@ func (l StdLogger) Fatal(msg ...interface{}) {
 // message at the Fatal level and exits the application
 func (l StdLogger) Fatalf(template string, args ...interface{}) {
 	if l.Level <= FatalLevel {
-		stdlog.Fatalf("[FATAL]   "+template, args...)
+		_ = stdlog.Output(2, fmt.Sprintf("[FATAL]   "+template, args...))
+		exit(1)
 	}
 }
 
@@ -206,7 +211,8 @@ func (l StdLogger) Fatalf(template string, args ...interface{}) {
 // context (key-value pairs) and exits the application
 func (l StdLogger) Fatalw(msg string, fields Fields) {
 	if l.Level <= FatalLevel {
-		stdlog.Fatalf("[FATAL]   %s %s", msg, handlFields(fields))
+		_ = stdlog.Output(2, fmt.Sprintf("[FATAL]   %s %s", msg, handlFields(fields)))
+		exit(1)
 	}
 }
 

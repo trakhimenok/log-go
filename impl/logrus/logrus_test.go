@@ -120,10 +120,37 @@ func TestLogrus(t *testing.T) {
 	}
 	buf.Reset()
 
-	// lgr.Fatal("test fatal")
-	// lgr.Fatalf(template string, args ...interface{})
-	// lgr.Fatalw(msg string, fields Fields)
+	var exitCode int
+	logger.ExitFunc = func(code int) {
+		exitCode = code
+	}
 
+	lgr.Fatal("test fatal")
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `level=fatal msg="test fatal"`) {
+		t.Log(buf.String())
+		t.Error("logrus fatal not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	lgr.Fatalf("Hello %s", "World")
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `level=fatal msg="Hello World"`) {
+		t.Log(buf.String())
+		t.Error("logrus fatalf not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
+
+	lgr.Fatalw("foo bar", log.Fields{"baz": "qux"})
+	assert.Equal(t, 1, exitCode)
+	if !strings.Contains(buf.String(), `level=fatal msg="foo bar" baz=qux`) {
+		t.Log(buf.String())
+		t.Error("logrus fatalw not logging correctly")
+	}
+	buf.Reset()
+	exitCode = 0
 }
 
 func TestStandardLogrus(t *testing.T) {

@@ -9,6 +9,8 @@ import (
 	"github.com/fatih/color"
 )
 
+var exit = os.Exit
+
 // TODO: Add i18n support for level labels
 // TODO: Add a mutex to lock writing output
 
@@ -269,7 +271,7 @@ func (l Logger) Fatal(msg ...interface{}) {
 		out := l.FatalColor.Sprint(append([]interface{}{"FATAL: "}, msg...)...)
 		out = checkEnding(out)
 		fmt.Fprint(l.FatalOut, out)
-		os.Exit(1)
+		exit(1)
 	}
 }
 
@@ -280,7 +282,7 @@ func (l Logger) Fatalf(template string, args ...interface{}) {
 		out := l.FatalColor.Sprintf("FATAL: "+template, args...)
 		out = checkEnding(out)
 		fmt.Fprint(l.FatalOut, out)
-		os.Exit(1)
+		exit(1)
 	}
 }
 
@@ -291,7 +293,7 @@ func (l Logger) Fatalw(msg string, fields log.Fields) {
 		out := l.FatalColor.Sprint("FATAL: "+msg, handlFields(fields))
 		out = checkEnding(out)
 		fmt.Fprint(l.FatalOut, out)
-		os.Exit(1)
+		exit(1)
 	}
 }
 
